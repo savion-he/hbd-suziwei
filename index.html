@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>致 苏紫薇</title>
+<style>
+  :root{
+    --night:#070a22;
+    --gold:#ffd166;
+    --pink:#ff6b9d;
+    --violet:#b8a9ff;
+    --ink:#f7f4ff;
+    --dim:#8a8fb8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:#070a22;
+    color:var(--ink);
+    overflow:hidden;
+    min-height:100vh;min-height:100dvh;
+  }
+  /* ===== 极光背景 ===== */
+  .aurora{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .aurora i{
+    position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;
+    animation:drift 16s ease-in-out infinite alternate;
+  }
+  .aurora i:nth-child(1){width:60vmax;height:34vmax;left:-15vmax;top:-12vmax;background:radial-gradient(closest-side,#3b2a8f,transparent)}
+  .aurora i:nth-child(2){width:52vmax;height:30vmax;right:-14vmax;top:6vmax;background:radial-gradient(closest-side,#7a2a6b,transparent);animation-delay:-5s}
+  .aurora i:nth-child(3){width:64vmax;height:32vmax;left:8vmax;bottom:-16vmax;background:radial-gradient(closest-side,#173a7a,transparent);animation-delay:-10s}
+  @keyframes drift{
+    from{transform:translate(0,0) scale(1)}
+    to{transform:translate(6vmax,-4vmax) scale(1.18)}
+  }
+  canvas{position:fixed;inset:0;pointer-events:none}
+  #skyCanvas{z-index:1}
+  #fxCanvas{z-index:4}
+
+  /* ===== 登录 ===== */
+  #loginScreen{
+    position:fixed;inset:0;z-index:20;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    transition:opacity .9s ease, transform .9s ease;
+  }
+  #loginScreen.hidden{opacity:0;transform:scale(1.1);pointer-events:none}
+  .login-card{
+    width:100%;max-width:390px;position:relative;
+    background:rgba(16,20,52,.5);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-radius:22px;padding:44px 34px 38px;text-align:center;
+    box-shadow:0 24px 70px rgba(0,0,0,.55);
+  }
+  /* 流光描边 */
+  .login-card::before{
+    content:"";position:absolute;inset:0;border-radius:22px;padding:1.5px;
+    background:linear-gradient(120deg,var(--gold),var(--pink),var(--violet),var(--gold));
+    background-size:300% 300%;
+    animation:borderFlow 6s linear infinite;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+  }
+  @keyframes borderFlow{to{background-position:300% 0}}
+  .lock{font-size:50px;line-height:1;margin-bottom:12px;display:inline-block;animation:float 3.2s ease-in-out infinite;filter:drop-shadow(0 0 14px rgba(255,209,102,.5))}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .login-card h1{font-size:21px;font-weight:600;letter-spacing:.14em;margin-bottom:6px}
+  .login-card h1 b{
+    background:linear-gradient(90deg,var(--gold),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;
+  }
+  .login-card p.sub{font-size:13px;color:var(--dim);letter-spacing:.08em;margin-bottom:26px}
+  .field{margin-bottom:15px;text-align:left}
+  .field label{display:block;font-size:12px;color:var(--violet);letter-spacing:.2em;margin-bottom:7px}
+  .field input{
+    width:100%;padding:13px 16px;font-size:16px;color:var(--ink);
+    background:rgba(7,10,34,.65);
+    border:1px solid rgba(184,169,255,.28);border-radius:12px;outline:none;
+    transition:border-color .25s, box-shadow .25s;
+  }
+  .field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,209,102,.18)}
+  .field input::placeholder{color:#565b85}
+  #loginBtn{
+    width:100%;margin-top:8px;padding:14px;
+    font-size:16px;font-weight:700;letter-spacing:.3em;text-indent:.3em;color:#2a1500;
+    background:linear-gradient(135deg,#ffe29a,var(--gold) 40%,#ff9e63);
+    border:none;border-radius:12px;cursor:pointer;
+    transition:transform .15s, box-shadow .25s;
+    box-shadow:0 8px 26px rgba(255,180,90,.4);
+  }
+  #loginBtn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(255,180,90,.55)}
+  #loginBtn:active{transform:translateY(0)}
+  #loginBtn:focus-visible,.field input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  #errMsg{min-height:20px;margin-top:13px;font-size:13px;color:var(--pink);opacity:0;transition:opacity .3s}
+  #errMsg.show{opacity:1}
+  .login-card.shake{animation:shake .45s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+
+  /* ===== 庆祝层 DOM ===== */
+  #party{
+    position:fixed;inset:0;z-index:6;display:none;
+    flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  }
+  #party.active{display:flex}
+  #party > *{opacity:0;transition:opacity 1s ease, transform 1s ease}
+  #party.reveal > *{opacity:1;transform:none}
+  .name-title{
+    font-size:clamp(34px,8vw,72px);font-weight:800;letter-spacing:.1em;
+    background:linear-gradient(90deg,var(--gold),var(--pink),var(--violet),var(--gold));
+    background-size:300% 100%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:shine 5s linear infinite;
+    filter:drop-shadow(0 0 22px rgba(255,120,170,.35));
+    transform:translateY(26px);
+  }
+  @keyframes shine{to{background-position:300% 0}}
+  .sub-en{
+    margin-top:10px;font-size:clamp(12px,2.8vw,16px);color:var(--violet);
+    letter-spacing:.5em;text-indent:.5em;transform:translateY(20px);
+    transition-delay:.25s!important;
+  }
+  /* 蛋糕 */
+  .cake-wrap{
+    position:relative;margin-top:clamp(22px,4.5vh,46px);
+    cursor:pointer;user-select:none;
+    transform:translateY(24px) scale(.92);
+    transition-delay:.5s!important;
+  }
+  .cake{position:relative;width:min(215px,54vw);margin:0 auto;filter:drop-shadow(0 14px 30px rgba(0,0,0,.5))}
+  .layer{border-radius:14px;position:relative;margin:0 auto}
+  .layer.top{width:60%;height:44px;background:linear-gradient(180deg,#ff9ebb,#ff5f96);z-index:3}
+  .layer.mid{width:80%;height:50px;background:linear-gradient(180deg,#c9b9ff,#9a82f5);margin-top:-8px;z-index:2}
+  .layer.bot{width:100%;height:56px;background:linear-gradient(180deg,#ffe3a3,#ffc35a);margin-top:-8px;z-index:1;border-radius:14px 14px 18px 18px}
+  .layer::after{content:"";position:absolute;top:0;left:0;right:0;height:14px;background:rgba(255,255,255,.55);border-radius:14px 14px 40% 40%/14px 14px 100% 100%}
+  .plate{width:118%;height:14px;background:linear-gradient(180deg,#3a3f6e,#22264c);border-radius:50%;margin:-4px auto 0}
+  .candles{position:absolute;top:-40px;left:50%;transform:translateX(-50%);display:flex;gap:18px;z-index:5}
+  .candle{width:9px;height:36px;border-radius:4px;position:relative}
+  .candle:nth-child(1){background:repeating-linear-gradient(135deg,#ff6b9d 0 5px,#ffd1e0 5px 10px)}
+  .candle:nth-child(2){background:repeating-linear-gradient(135deg,#ffd166 0 5px,#fff2cc 5px 10px)}
+  .candle:nth-child(3){background:repeating-linear-gradient(135deg,#b8a9ff 0 5px,#e6e0ff 5px 10px)}
+  .flame{
+    position:absolute;top:-21px;left:50%;transform:translateX(-50%);
+    width:14px;height:21px;
+    background:radial-gradient(ellipse at 50% 70%,#fff8d6 0%,#ffd166 45%,#ff8c42 80%,transparent 100%);
+    border-radius:50% 50% 50% 50%/62% 62% 38% 38%;
+    animation:flicker .26s ease-in-out infinite alternate;
+    filter:drop-shadow(0 0 10px rgba(255,200,80,.95));
+    transition:opacity .3s, transform .3s;
+  }
+  @keyframes flicker{from{transform:translateX(-50%) scale(1) rotate(-3deg)}to{transform:translateX(-50%) scale(1.14) rotate(3deg)}}
+  .flame.out{opacity:0;transform:translateX(-50%) scale(.15)}
+  .hint{
+    margin-top:22px;font-size:13px;color:var(--dim);letter-spacing:.12em;
+    animation:pulse 2s ease-in-out infinite;transition-delay:.7s!important;
+  }
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  .hint.gone{opacity:0!important;animation:none;pointer-events:none}
+  #wish{
+    margin-top:16px;max-width:580px;
+    font-size:clamp(15px,3.4vw,19px);line-height:2.05;letter-spacing:.06em;
+    min-height:4em;text-shadow:0 2px 14px rgba(0,0,0,.6);
+  }
+  #wish .cursor{display:inline-block;width:2px;height:1.1em;background:var(--gold);vertical-align:-.15em;animation:blink .8s step-end infinite;margin-left:2px}
+  @keyframes blink{50%{opacity:0}}
+
+  @media (prefers-reduced-motion:reduce){
+    .aurora i,.flame,.name-title,.hint,.lock{animation:none}
+  }
+  @media (max-width:420px){
+    .login-card{padding:36px 24px 30px}
+    .candles{gap:14px}
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora"><i></i><i></i><i></i></div>
+<canvas id="skyCanvas"></canvas>
+<canvas id="fxCanvas"></canvas>
+
+<!-- 登录 -->
+<div id="loginScreen">
+  <div class="login-card" id="loginCard">
+    <span class="lock">🔮</span>
+    <h1>这份惊喜,只属于 <b>苏紫薇</b></h1>
+    <p class="sub">输入专属账号与密码,星空将为你点亮</p>
+    <div class="field">
+      <label for="user">账 号</label>
+      <input id="user" type="text" inputmode="numeric" autocomplete="off" placeholder="请输入账号">
+    </div>
+    <div class="field">
+      <label for="pass">密 码</label>
+      <input id="pass" type="password" inputmode="numeric" placeholder="请输入密码">
+    </div>
+    <button id="loginBtn">点 亮 星 空</button>
+    <div id="errMsg"></div>
+  </div>
+</div>
+
+<!-- 庆祝 -->
+<div id="party">
+  <div class="name-title">苏紫薇 · 生日快乐</div>
+  <div class="sub-en">HAPPY BIRTHDAY TO ZIWEI</div>
+  <div class="cake-wrap" id="cakeWrap" role="button" tabindex="0" aria-label="点击蛋糕吹灭蜡烛">
+    <div class="cake">
+      <div class="candles">
+        <div class="candle"><div class="flame"></div></div>
+        <div class="candle"><div class="flame"></div></div>
+        <div class="candle"><div class="flame"></div></div>
+      </div>
+      <div class="layer top"></div>
+      <div class="layer mid"></div>
+      <div class="layer bot"></div>
+      <div class="plate"></div>
+    </div>
+  </div>
+  <div class="hint" id="hint">🎂 许个愿,点一下蛋糕吹灭蜡烛</div>
+  <div id="wish"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var ACCOUNT="20260520", PASSWORD="20260704";
+var NAME="苏紫薇";
+var reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+var W=innerWidth, H=innerHeight, DPR=Math.min(devicePixelRatio||1,2);
+
+/* ================= 星空 + 流星 ================= */
+var sky=document.getElementById("skyCanvas"), sk=sky.getContext("2d");
+var stars=[], meteors=[];
+function resizeSky(){
+  W=innerWidth;H=innerHeight;
+  sky.width=W*DPR;sky.height=H*DPR;sk.setTransform(DPR,0,0,DPR,0,0);
+  stars=[];
+  var n=Math.min(180,Math.floor(W*H/6000));
+  for(var i=0;i<n;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+.3,p:Math.random()*6.28,s:Math.random()*.02+.008});
+}
+function spawnMeteor(){
+  meteors.push({
+    x:Math.random()*W*1.2, y:-20,
+    vx:-(3+Math.random()*4), vy:(4+Math.random()*4),
+    len:80+Math.random()*90, life:1
+  });
+}
+function skyLoop(){
+  sk.clearRect(0,0,W,H);
+  var i;
+  for(i=0;i<stars.length;i++){
+    var st=stars[i];st.p+=st.s;
+    sk.globalAlpha=.35+.65*Math.abs(Math.sin(st.p));
+    sk.beginPath();sk.arc(st.x,st.y,st.r,0,6.28);
+    sk.fillStyle="#e9e9ff";sk.fill();
+  }
+  sk.globalAlpha=1;
+  for(i=meteors.length-1;i>=0;i--){
+    var m=meteors[i];
+    m.x+=m.vx;m.y+=m.vy;m.life-=.012;
+    if(m.life<=0||m.y>H+50){meteors.splice(i,1);continue;}
+    var mag=Math.hypot(m.vx,m.vy);
+    var tx=m.x-m.vx/mag*m.len, ty=m.y-m.vy/mag*m.len;
+    var g=sk.createLinearGradient(m.x,m.y,tx,ty);
+    g.addColorStop(0,"rgba(255,255,240,"+(.9*m.life)+")");
+    g.addColorStop(1,"rgba(255,255,240,0)");
+    sk.strokeStyle=g;sk.lineWidth=2;sk.lineCap="round";
+    sk.beginPath();sk.moveTo(m.x,m.y);sk.lineTo(tx,ty);sk.stroke();
+  }
+  requestAnimationFrame(skyLoop);
+}
+resizeSky();skyLoop();
+if(!reduceMotion)setInterval(function(){if(Math.random()<.55)spawnMeteor();},1400);
+
+/* ================= 特效画布(烟花 + 粒子文字) ================= */
+var fx=document.getElementById("fxCanvas"), fc=fx.getContext("2d");
+function resizeFx(){fx.width=W*DPR;fx.height=H*DPR;fc.setTransform(DPR,0,0,DPR,0,0);}
+resizeFx();
+addEventListener("resize",function(){resizeSky();resizeFx();});
+
+var COLORS=["#ffd166","#ff6b9d","#b8a9ff","#7ce7ff","#ff8c42","#a6ff9d","#ff9ebb"];
+var rockets=[], sparks=[], textParticles=[];
+
+/* ---- 烟花:带拖尾与光晕 ---- */
+function launch(x,color){
+  rockets.push({
+    x:x!==undefined?x:W*(.12+Math.random()*.76), y:H+12,
+    vx:(Math.random()-.5)*1.8,
+    vy:-(H*.012+Math.random()*H*.005),
+    color:color||COLORS[(Math.random()*COLORS.length)|0],
+    targetY:H*(.14+Math.random()*.3),
+    trail:[]
+  });
+}
+function addSpark(x,y,vx,vy,color,r,decay){
+  sparks.push({x:x,y:y,vx:vx,vy:vy,color:color,r:r,life:1,decay:decay,trail:[]});
+}
+function explode(x,y,color,big){
+  var n=big?110:64;
+  for(var i=0;i<n;i++){
+    var a=6.283*i/n+Math.random()*.25;
+    var sp=(Math.random()*.55+.45)*(big?8.5:6);
+    addSpark(x,y,Math.cos(a)*sp,Math.sin(a)*sp,
+      Math.random()<.82?color:COLORS[(Math.random()*COLORS.length)|0],
+      Math.random()*2+1.6,.010+Math.random()*.012);
+  }
+  // 中心闪光
+  addSpark(x,y,0,0,"#ffffff",big?9:6,.06);
+}
+/* 心形烟花 */
+function heartBurst(x,y,scale,color){
+  var n=110;
+  for(var i=0;i<n;i++){
+    var t=6.283*i/n;
+    var hx=16*Math.pow(Math.sin(t),3);
+    var hy=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+    var sp=.34*scale*(0.9+Math.random()*.2);
+    addSpark(x,y,hx*sp,hy*sp,color,2.2,.008+Math.random()*.006);
+  }
+}
+/* 金色瀑布雨 */
+function goldenRain(){
+  var cols=Math.floor(W/26);
+  for(var i=0;i<cols;i++){
+    (function(i){
+      setTimeout(function(){
+        addSpark(26*i+13,-10,(Math.random()-.5)*.6,2.5+Math.random()*2,"#ffd166",1.8,.006);
+      },Math.random()*900);
+    })(i);
+  }
+}
+
+/* ---- 粒子文字 ---- */
+function sampleText(text){
+  var oc=document.createElement("canvas"),octx=oc.getContext("2d");
+  var fs=Math.min(W/(text.length*1.15),H*.24,190);
+  oc.width=W;oc.height=H;
+  octx.font="900 "+fs+"px 'PingFang SC','Microsoft YaHei',sans-serif";
+  octx.textAlign="center";octx.textBaseline="middle";
+  octx.fillStyle="#fff";
+  octx.fillText(text,W/2,H*.42);
+  var data=octx.getImageData(0,0,W,H).data;
+  var gap=Math.max(4,Math.round(fs/34));
+  var pts=[];
+  for(var y=0;y<H;y+=gap)
+    for(var x=0;x<W;x+=gap)
+      if(data[(y*W+x)*4+3]>128)pts.push({x:x,y:y});
+  return pts;
+}
+var textPhase=null; // {state:'gather'|'hold'|'scatter', until, onDone}
+function formText(text,holdMs,onDone){
+  var pts=sampleText(text);
+  // 限制粒子数,均匀抽样
+  var MAX=reduceMotion?400:1400;
+  if(pts.length>MAX){
+    var step=pts.length/MAX,out=[];
+    for(var i=0;i<MAX;i++)out.push(pts[Math.floor(i*step)]);
+    pts=out;
+  }
+  textParticles=[];
+  for(var j=0;j<pts.length;j++){
+    var edge=Math.random();
+    var sx,sy;
+    if(edge<.25){sx=-30;sy=Math.random()*H;}
+    else if(edge<.5){sx=W+30;sy=Math.random()*H;}
+    else if(edge<.75){sx=Math.random()*W;sy=-30;}
+    else{sx=Math.random()*W;sy=H+30;}
+    textParticles.push({
+      x:sx,y:sy,tx:pts[j].x,ty:pts[j].y,
+      vx:0,vy:0,
+      color:Math.random()<.6?"#ffd166":(Math.random()<.5?"#ff6b9d":"#b8a9ff"),
+      r:1.6+Math.random()*1.3,
+      tw:Math.random()*6.28
+    });
+  }
+  textPhase={state:"gather",start:performance.now(),hold:holdMs,onDone:onDone};
+}
+function scatterText(){
+  for(var i=0;i<textParticles.length;i++){
+    var p=textParticles[i];
+    var a=Math.random()*6.283,sp=2+Math.random()*5;
+    p.vx=Math.cos(a)*sp;p.vy=Math.sin(a)*sp-1.5;
+    p.life=1;p.decay=.014+Math.random()*.012;
+  }
+  textPhase.state="scatter";
+}
+
+/* ---- 主循环 ---- */
+function fxLoop(){
+  fc.clearRect(0,0,W,H);
+  fc.globalCompositeOperation="lighter";
+  var i,p;
+
+  // 火箭
+  for(i=rockets.length-1;i>=0;i--){
+    var r=rockets[i];
+    r.trail.push({x:r.x,y:r.y});
+    if(r.trail.length>7)r.trail.shift();
+    r.x+=r.vx;r.y+=r.vy;r.vy+=.055;
+    for(var t=0;t<r.trail.length;t++){
+      fc.globalAlpha=t/r.trail.length*.7;
+      fc.beginPath();fc.arc(r.trail[t].x,r.trail[t].y,1.6,0,6.28);
+      fc.fillStyle=r.color;fc.fill();
+    }
+    fc.globalAlpha=1;
+    fc.beginPath();fc.arc(r.x,r.y,2.6,0,6.28);
+    fc.fillStyle="#fff";fc.fill();
+    if(r.y<=r.targetY||r.vy>=-1){explode(r.x,r.y,r.color,Math.random()<.3);rockets.splice(i,1);}
+  }
+
+  // 火花
+  for(i=sparks.length-1;i>=0;i--){
+    p=sparks[i];
+    p.trail.push({x:p.x,y:p.y});
+    if(p.trail.length>5)p.trail.shift();
+    p.x+=p.vx;p.y+=p.vy;
+    p.vy+=.05;p.vx*=.984;p.vy*=.984;
+    p.life-=p.decay;
+    if(p.life<=0){sparks.splice(i,1);continue;}
+    // 拖尾
+    if(p.trail.length>1){
+      fc.globalAlpha=p.life*.5;
+      fc.strokeStyle=p.color;fc.lineWidth=p.r*.8;fc.lineCap="round";
+      fc.beginPath();fc.moveTo(p.trail[0].x,p.trail[0].y);
+      fc.lineTo(p.x,p.y);fc.stroke();
+    }
+    fc.globalAlpha=p.life;
+    fc.beginPath();fc.arc(p.x,p.y,p.r*(0.5+p.life*.6),0,6.28);
+    fc.fillStyle=p.color;fc.fill();
+    // 光晕
+    fc.globalAlpha=p.life*.25;
+    fc.beginPath();fc.arc(p.x,p.y,p.r*2.4,0,6.28);
+    fc.fill();
+  }
+  fc.globalAlpha=1;
+
+  // 粒子文字
+  if(textPhase){
+    var now=performance.now();
+    for(i=0;i<textParticles.length;i++){
+      p=textParticles[i];
+      if(textPhase.state==="scatter"){
+        p.x+=p.vx;p.y+=p.vy;p.vy+=.06;p.life-=p.decay;
+        if(p.life<0)p.life=0;
+        fc.globalAlpha=p.life;
+      }else{
+        p.x+=(p.tx-p.x)*.075;
+        p.y+=(p.ty-p.y)*.075;
+        p.tw+=.15;
+        fc.globalAlpha=.65+.35*Math.sin(p.tw);
+      }
+      fc.beginPath();fc.arc(p.x,p.y,p.r,0,6.28);
+      fc.fillStyle=p.color;fc.fill();
+      fc.globalAlpha=(textPhase.state==="scatter"?(p.life||0):.3);
+      fc.beginPath();fc.arc(p.x,p.y,p.r*2.2,0,6.28);
+      fc.fill();
+    }
+    fc.globalAlpha=1;
+    if(textPhase.state==="gather" && now-textPhase.start>1500){
+      textPhase.state="hold";textPhase.holdStart=now;
+    }else if(textPhase.state==="hold" && now-textPhase.holdStart>textPhase.hold){
+      scatterText();
+    }else if(textPhase.state==="scatter"){
+      var alive=false;
+      for(i=0;i<textParticles.length;i++)if(textParticles[i].life>0){alive=true;break;}
+      if(!alive){
+        var cb=textPhase.onDone;textPhase=null;textParticles=[];
+        if(cb)cb();
+      }
+    }
+  }
+  fc.globalCompositeOperation="source-over";
+  requestAnimationFrame(fxLoop);
+}
+fxLoop();
+
+/* ================= 登录 ================= */
+var card=document.getElementById("loginCard");
+var err=document.getElementById("errMsg");
+var userIn=document.getElementById("user");
+var passIn=document.getElementById("pass");
+function tryLogin(){
+  var u=userIn.value.trim(),p=passIn.value.trim();
+  if(u===ACCOUNT&&p===PASSWORD){
+    err.classList.remove("show");
+    document.getElementById("loginScreen").classList.add("hidden");
+    setTimeout(startShow,600);
+  }else{
+    err.textContent=!u||!p?"请先输入账号和密码哦":"账号或密码不对,再想想~";
+    err.classList.add("show");
+    card.classList.remove("shake");void card.offsetWidth;card.classList.add("shake");
+  }
+}
+document.getElementById("loginBtn").addEventListener("click",tryLogin);
+passIn.addEventListener("keydown",function(e){if(e.key==="Enter")tryLogin();});
+userIn.addEventListener("keydown",function(e){if(e.key==="Enter")passIn.focus();});
+
+/* ================= 演出编排 ================= */
+var started=false;
+function startShow(){
+  if(started)return;started=true;
+  // 第一幕:烟花齐放
+  var n=reduceMotion?3:9;
+  for(var i=0;i<n;i++)setTimeout(launch,i*230);
+  // 第二幕:粒子汇聚出名字
+  setTimeout(function(){
+    formText(NAME,2400,function(){
+      // 第三幕:名字散开 → "生日快乐" 汇聚
+      formText("生日快乐",2400,function(){
+        // 第四幕:界面揭幕
+        revealParty();
+      });
+      for(var j=0;j<3;j++)setTimeout(launch,j*300);
+    });
+  },1100);
+  // 常驻零星烟花
+  setInterval(function(){
+    if(!reduceMotion&&Math.random()<.7)launch();
+  },1900);
+}
+function revealParty(){
+  var party=document.getElementById("party");
+  party.classList.add("active");
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){party.classList.add("reveal");});
+  });
+  heartBurst(W/2,H*.3,1.1,"#ff6b9d");
+}
+
+/* ================= 吹蜡烛 ================= */
+var candlesOut=false;
+function blowCandles(){
+  if(candlesOut||!started)return;candlesOut=true;
+  var flames=document.querySelectorAll(".flame");
+  flames.forEach(function(f,i){setTimeout(function(){f.classList.add("out");},i*180);});
+  document.getElementById("hint").classList.add("gone");
+  setTimeout(function(){
+    // 三连心形烟花 + 金色瀑布
+    heartBurst(W/2,H*.26,1.35,"#ff6b9d");
+    setTimeout(function(){heartBurst(W*.27,H*.38,1,"#ffd166");},350);
+    setTimeout(function(){heartBurst(W*.73,H*.38,1,"#b8a9ff");},700);
+    setTimeout(goldenRain,900);
+    typeWish();
+  },700);
+}
+var WISH="紫薇,愿你眼里永远有星辰,心中常驻暖阳;\n所求皆如愿,所行化坦途。\n新的一岁,平安喜乐,漂亮又自由。🎂✨";
+function typeWish(){
+  var box=document.getElementById("wish");
+  box.innerHTML="";
+  var cursor=document.createElement("span");cursor.className="cursor";
+  box.appendChild(cursor);
+  var i=0;
+  (function step(){
+    if(i>=WISH.length)return;
+    var ch=WISH[i++];
+    if(ch==="\n")box.insertBefore(document.createElement("br"),cursor);
+    else box.insertBefore(document.createTextNode(ch),cursor);
+    setTimeout(step,reduceMotion?0:85);
+  })();
+}
+var cakeWrap=document.getElementById("cakeWrap");
+cakeWrap.addEventListener("click",blowCandles);
+cakeWrap.addEventListener("keydown",function(e){
+  if(e.key==="Enter"||e.key===" "){e.preventDefault();blowCandles();}
+});
+/* 点击屏幕任意处放烟花 */
+document.getElementById("party").addEventListener("click",function(e){
+  if(started&&!e.target.closest(".cake-wrap"))launch(e.clientX);
+});
+})();
+</script>
+</body>
+</html>
