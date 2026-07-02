@@ -35,7 +35,7 @@
     from{transform:translate(0,0) scale(1)}
     to{transform:translate(6vmax,-4vmax) scale(1.18)}
   }
-  canvas{position:fixed;inset:0;pointer-events:none}
+  canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;pointer-events:none}
   #skyCanvas{z-index:1}
   #fxCanvas{z-index:4}
 
@@ -333,19 +333,27 @@ function goldenRain(){
 
 /* ---- 粒子文字 ---- */
 function sampleText(text){
+  var w=innerWidth,h=innerHeight;
   var oc=document.createElement("canvas"),octx=oc.getContext("2d");
-  var fs=Math.min(W/(text.length*1.15),H*.24,190);
-  oc.width=W;oc.height=H;
-  octx.font="900 "+fs+"px 'PingFang SC','Microsoft YaHei',sans-serif";
+  oc.width=w;oc.height=h;
+  var maxWidth=w*0.86, maxHeight=h*0.24;
+  var fs=Math.min(h*0.22,190);
   octx.textAlign="center";octx.textBaseline="middle";
   octx.fillStyle="#fff";
-  octx.fillText(text,W/2,H*.42);
-  var data=octx.getImageData(0,0,W,H).data;
-  var gap=Math.max(4,Math.round(fs/34));
+  function setFont(size){octx.font="900 "+size+"px 'PingFang SC','Microsoft YaHei',sans-serif";}
+  setFont(fs);
+  var mw=octx.measureText(text).width;
+  if(mw>maxWidth) fs=fs*(maxWidth/mw);
+  if(fs>maxHeight) fs=maxHeight;
+  fs=Math.max(fs,18);
+  setFont(fs);
+  octx.fillText(text,w/2,h*.42);
+  var data=octx.getImageData(0,0,w,h).data;
+  var gap=Math.max(3,Math.round(fs/34));
   var pts=[];
-  for(var y=0;y<H;y+=gap)
-    for(var x=0;x<W;x+=gap)
-      if(data[(y*W+x)*4+3]>128)pts.push({x:x,y:y});
+  for(var y=0;y<h;y+=gap)
+    for(var x=0;x<w;x+=gap)
+      if(data[(y*w+x)*4+3]>128)pts.push({x:x,y:y});
   return pts;
 }
 var textPhase=null; // {state:'gather'|'hold'|'scatter', until, onDone}
